@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
-	"net"
+	"os"
 	"time"
 
 	_ "github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
+	"github.com/teohrt/knockitoff/config"
 	"github.com/teohrt/knockitoff/packets"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -19,6 +21,21 @@ var (
 )
 
 func main() {
+	f, err := os.Open("config.yml")
+	if err != nil {
+		fmt.Println("Error reading config")
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	var cfg config.Config
+	decoder := yaml.NewDecoder(f)
+	err = decoder.Decode(&cfg)
+	if err != nil {
+		fmt.Println("Error decoding config")
+		log.Fatal(err)
+	}
+
 	handle, err := pcap.OpenLive(device, snaplen, promiscuous, timeout)
 	if err != nil {
 		fmt.Println("Error creating handler")
@@ -26,17 +43,14 @@ func main() {
 	}
 	defer handle.Close()
 
-	for i := 0; i < 50; i++ {
-		packet, err := packets.NewDeauthPacket(&packets.PacketPreReq{
-			SrcIP:   net.IP{0, 0, 0, 0},
-			DstIP:   net.IP{0, 0, 0, 0},
-			SrcMAC:  net.HardwareAddr{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-			DstMAC:  net.HardwareAddr{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-			SrcPort: 4321,
-			DstPort: 80,
-			Payload: []byte{1, 1, 1, 1},
-			Seq:     uint16(i),
-		})
+	packetBase, err := config.ConvertToPacketBase(&cfg)
+	if err != nil {
+		fmt.Println("Error converting cfg to PacketBase")
+		log.Fatal(err)
+	}
+
+	for i := uint16(0); i < 50; i++ {
+		packet, err := packets.NewDeauthPacket(packetBase, i)
 		if err != nil {
 			fmt.Println("Error creating packet")
 			log.Fatal(err)
@@ -46,7 +60,7 @@ func main() {
 			fmt.Println("Error writing writing packet data")
 			log.Fatal(err)
 		}
-		fmt.Printf("Packet sent #%d\n", i+1)
+		fmt.Printf("Packet #%d sent\n", i+1)
 		time.Sleep(500 * time.Millisecond)
 	}
 }

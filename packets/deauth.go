@@ -6,7 +6,7 @@ import (
 )
 
 // TODO: Initialize legitimate deauth
-func NewDeauthPacket(p *PacketPreReq) ([]byte, error) {
+func NewDeauthPacket(p *PacketBase, seq uint16) ([]byte, error) {
 	ethernetLayer := &layers.Ethernet{
 		SrcMAC: p.SrcMAC,
 		DstMAC: p.DstMAC,
@@ -24,6 +24,6 @@ func NewDeauthPacket(p *PacketPreReq) ([]byte, error) {
 		ethernetLayer,
 		ipLayer,
 		tcpLayer,
-		gopacket.Payload(p.Payload),
+		gopacket.Payload([]byte{10, 20, 30}),
 	)
 }

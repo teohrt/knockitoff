@@ -7,15 +7,13 @@ import (
 	"github.com/google/gopacket"
 )
 
-type PacketPreReq struct {
+type PacketBase struct {
 	SrcIP   net.IP
 	DstIP   net.IP
 	DstMAC  net.HardwareAddr
 	SrcMAC  net.HardwareAddr
 	SrcPort uint16
 	DstPort uint16
-	Seq     uint16
-	Payload []byte
 }
 
 var SerializationOptions = gopacket.SerializeOptions{
